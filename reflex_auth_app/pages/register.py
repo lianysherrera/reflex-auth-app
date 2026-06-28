@@ -6,6 +6,10 @@ from reflex_auth_app.state.auth_state import AuthState
 def register_page() -> rx.Component:
     return rx.center(
         rx.vstack(
+            rx.link(
+                rx.icon("arrow-left", size=20),
+                href="/",
+            ),
             rx.vstack(
                 rx.heading("Crea tu cuenta", size="7"),
                 rx.text(
@@ -19,6 +23,16 @@ def register_page() -> rx.Component:
             ),
             rx.form(
                 rx.vstack(
+                    rx.vstack(
+                        rx.text("Nombre", size="2", weight="medium"),
+                        rx.input(
+                            name="name",
+                            placeholder="Tu nombre o alias",
+                            width="100%",
+                        ),
+                        spacing="1",
+                        width="100%",
+                    ),
                     rx.vstack(
                         rx.text("Email", size="2", weight="medium"),
                         rx.input(
@@ -82,6 +96,12 @@ def register_page() -> rx.Component:
                 on_submit=AuthState.handle_register,
                 reset_on_submit=True,
                 width="100%",
+            ),
+            rx.hstack(
+                rx.text("¿Ya tienes cuenta?", size="2"),
+                rx.link("Iniciar sesión", href="/login", size="2"),
+                spacing="2",
+                justify="center",
             ),
             spacing="4",
             width="100%",
