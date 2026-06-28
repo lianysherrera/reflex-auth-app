@@ -1,5 +1,6 @@
 import reflex as rx
 from rxconfig import config
+from reflex_auth_app.pages.register import register_page
 
 from reflex_auth_app.utils.db import init_db
 
@@ -25,3 +26,4 @@ init_db()
 
 app = rx.App()
 app.add_page(index)
+app.add_page(register_page, route="/register")
