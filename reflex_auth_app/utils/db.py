@@ -2,7 +2,6 @@ import reflex as rx
 import sqlalchemy
 from sqlalchemy import inspect as sa_inspect
 
-# Importamos los modelos para que sus tablas queden registradas antes de llamar a create_all.
 from reflex_auth_app.models.session import Session
 from reflex_auth_app.models.user import User
 
@@ -20,13 +19,11 @@ def _placeholder_for_column(column: sqlalchemy.Column, dialect) -> object | None
 
 
 def _add_missing_columns(engine: sqlalchemy.engine.Engine) -> None:
-    """Agrega a las tablas existentes cualquier columna nueva del modelo."""
     inspector = sa_inspect(engine)
     existing_tables = set(inspector.get_table_names())
 
     for table in User.metadata.sorted_tables:
         if table.name not in existing_tables:
-            # La tabla completa no existe todavía; create_all() ya la crea.
             continue
 
         existing_columns = {col["name"] for col in inspector.get_columns(table.name)}

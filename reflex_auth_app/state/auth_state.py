@@ -5,6 +5,9 @@ from typing import Optional
 import reflex as rx
 import sqlmodel
 
+import uuid
+from reflex_auth_app.utils.email import send_verification_email
+
 from reflex_auth_app.models import Session, User
 from reflex_auth_app.utils import hash_password, verify_password
 
@@ -92,18 +95,53 @@ class AuthState(rx.State):
                 self.register_error = "Ya existe una cuenta registrada con ese email."
                 return
 
+            verification_token = uuid.uuid4().hex
+
             new_user = User(
                 name=name,
                 email=email,
                 password_hash=hash_password(password),
+                verification_token=verification_token,
             )
             session.add(new_user)
             session.commit()
 
-        self.register_success = "¡Cuenta creada exitosamente! Ya puedes iniciar sesión."
+        send_verification_email(email, verification_token)
+
+        self.register_success = "¡Cuenta creada! Revisa tu email para verificar tu cuenta antes de iniciar sesión."
         yield
         await asyncio.sleep(3)
         self.register_success = ""
+
+    # Mensaje a mostrar en la página de verificación.
+    verify_message: str = ""
+    verify_success: bool = False
+
+    def handle_verify(self):
+        token = self.router.page.params.get("token", "")
+
+        if not token:
+            self.verify_message = "Link de verificación inválido."
+            self.verify_success = False
+            return
+
+        with rx.session() as session:
+            user = session.exec(
+                sqlmodel.select(User).where(User.verification_token == token)
+            ).first()
+
+            if user is None:
+                self.verify_message = "Este link de verificación no es válido o ya fue usado."
+                self.verify_success = False
+                return
+
+            user.is_verified = True
+            user.verification_token = None
+            session.add(user)
+            session.commit()
+
+        self.verify_message = "¡Tu cuenta fue verificada exitosamente! Ya puedes iniciar sesión."
+        self.verify_success = True
 
     def handle_login(self, form_data: dict):
         self.login_error = ""
@@ -122,6 +160,10 @@ class AuthState(rx.State):
 
             if user is None or not verify_password(password, user.password_hash):
                 self.login_error = "Email o contraseña incorrectos."
+                return
+
+            if not user.is_verified:
+                self.login_error = "Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja de entrada."
                 return
 
             new_session = Session(user_id=user.id)
