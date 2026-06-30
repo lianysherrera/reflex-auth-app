@@ -30,6 +30,11 @@ class AuthState(rx.State):
             return ""
         return user.name
 
+
+    def require_login(self):
+        if not self.is_logged_in:
+            return rx.redirect("/login")
+        
     def _get_current_user(self) -> Optional[User]:
         if not self.session_token:
             return None

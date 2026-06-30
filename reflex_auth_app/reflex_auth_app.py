@@ -2,7 +2,7 @@ import reflex as rx
 from reflex_auth_app.pages.register import register_page
 from reflex_auth_app.pages.login import login_page
 from reflex_auth_app.pages.dashboard import dashboard_page
-
+from reflex_auth_app.state.auth_state import AuthState
 from reflex_auth_app.utils.db import init_db
 
 
@@ -46,4 +46,4 @@ app = rx.App()
 app.add_page(index)
 app.add_page(register_page, route="/register")
 app.add_page(login_page, route="/login")
-app.add_page(dashboard_page, route="/dashboard")
+app.add_page(dashboard_page, route="/dashboard", on_load=AuthState.require_login)
