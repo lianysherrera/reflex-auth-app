@@ -4,11 +4,12 @@ from reflex_auth_app.pages.login import login_page
 from reflex_auth_app.pages.dashboard import dashboard_page
 from reflex_auth_app.state.auth_state import AuthState
 from reflex_auth_app.utils.db import init_db
+from reflex_auth_app.components.navbar import navbar
 
 
 def index() -> rx.Component:
-    return rx.box(
-        rx.color_mode.button(position="top-right"),
+    return rx.fragment(
+        navbar(),
         rx.center(
             rx.vstack(
                 rx.heading(
@@ -23,15 +24,6 @@ def index() -> rx.Component:
                     color_scheme="gray",
                     text_align="center",
                 ),
-                rx.link(
-                    rx.button(
-                        "Registrarse",
-                        size="3",
-                        variant="solid",
-                        cursor="pointer",
-                    ),
-                    href="/register",
-                ),
                 spacing="6",
                 align="center",
             ),
@@ -44,6 +36,6 @@ init_db()
 
 app = rx.App()
 app.add_page(index)
-app.add_page(register_page, route="/register")
+app.add_page(register_page, route="/register", on_load=AuthState.reset_register_messages)
 app.add_page(login_page, route="/login")
 app.add_page(dashboard_page, route="/dashboard", on_load=AuthState.require_login)

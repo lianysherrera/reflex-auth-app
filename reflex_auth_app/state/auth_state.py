@@ -1,3 +1,4 @@
+import asyncio
 import re
 from typing import Optional
 
@@ -34,7 +35,11 @@ class AuthState(rx.State):
     def require_login(self):
         if not self.is_logged_in:
             return rx.redirect("/login")
-        
+
+    def reset_register_messages(self):
+        self.register_error = ""
+        self.register_success = ""
+
     def _get_current_user(self) -> Optional[User]:
         if not self.session_token:
             return None
@@ -51,7 +56,7 @@ class AuthState(rx.State):
                 sqlmodel.select(User).where(User.id == db_session.user_id)
             ).first()
 
-    def handle_register(self, form_data: dict) -> None:
+    async def handle_register(self, form_data: dict):
         self.register_error = ""
         self.register_success = ""
 
@@ -96,6 +101,9 @@ class AuthState(rx.State):
             session.commit()
 
         self.register_success = "¡Cuenta creada exitosamente! Ya puedes iniciar sesión."
+        yield
+        await asyncio.sleep(3)
+        self.register_success = ""
 
     def handle_login(self, form_data: dict):
         self.login_error = ""
