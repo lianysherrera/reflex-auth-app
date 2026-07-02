@@ -50,9 +50,16 @@ class AuthState(rx.State):
         if not self.is_logged_in:
             return rx.redirect("/login")
 
+    def redirect_if_logged_in(self):
+        if self.is_logged_in:
+            return rx.redirect("/dashboard")
+
     def reset_register_messages(self):
         self.register_error = ""
         self.register_success = ""
+
+    def reset_login_error(self):
+        self.login_error = ""
 
     def _get_current_user(self) -> Optional[User]:
         if not self.session_token:
@@ -170,32 +177,34 @@ class AuthState(rx.State):
         email = form_data.get("email", "").strip().lower()
         password = form_data.get("password", "")
 
+        error = None
+
         if not email or not password:
-            self.login_error = "Por favor completa todos los campos."
+            error = "Por favor completa todos los campos."
+        else:
+            with rx.session() as session:
+                user = session.exec(
+                    sqlmodel.select(User).where(User.email == email)
+                ).first()
+
+                if user is None or not verify_password(password, user.password_hash):
+                    error = "Email o contraseña incorrectos."
+                elif not user.is_verified:
+                    error = "Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja de entrada."
+                else:
+                    new_session = Session(user_id=user.id)
+                    session.add(new_session)
+                    session.commit()
+                    session.refresh(new_session)
+                    self.session_token = new_session.token
+
+        if error:
+            self.login_error = error
             self.is_loading = False
+            yield
+            await asyncio.sleep(6)
+            self.login_error = ""
             return
-
-        with rx.session() as session:
-            user = session.exec(
-                sqlmodel.select(User).where(User.email == email)
-            ).first()
-
-            if user is None or not verify_password(password, user.password_hash):
-                self.login_error = "Email o contraseña incorrectos."
-                self.is_loading = False
-                return
-
-            if not user.is_verified:
-                self.login_error = "Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja de entrada."
-                self.is_loading = False
-                return
-
-            new_session = Session(user_id=user.id)
-            session.add(new_session)
-            session.commit()
-            session.refresh(new_session)
-
-            self.session_token = new_session.token
 
         self.is_loading = False
         yield rx.redirect("/dashboard")

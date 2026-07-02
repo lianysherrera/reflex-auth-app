@@ -7,7 +7,7 @@ def navbar() -> rx.Component:
     return rx.box(
         rx.hstack(
             rx.link(
-                rx.heading("Reflex Auth", size="5"),
+                rx.heading("Reflex Auth", size="5", color="white", _hover={"color": "#c0c0c0"}, transition="color 0.2s"),
                 href="/",
             ),
             rx.spacer(),
@@ -25,9 +25,31 @@ def navbar() -> rx.Component:
                     align="center",
                 ),
                 rx.hstack(
-                    rx.link(rx.button("Iniciar sesión", variant="soft"), href="/login"),
-                    rx.link(rx.button("Registrarse"), href="/register"),
-                    spacing="4",
+                    rx.link(
+                        rx.button(
+                            "Iniciar sesión",
+                            variant="ghost",
+                            color="white",
+                            border="1px solid white",
+                            background="transparent",
+                            _hover={"color": "#c0c0c0", "border": "1px solid #c0c0c0", "background": "transparent"},
+                            transition="color 0.2s, border-color 0.2s",
+                        ),
+                        href="/login",
+                    ),
+                    rx.link(
+                        rx.button(
+                            "Registrarse",
+                            variant="ghost",
+                            color="white",
+                            border="1px solid white",
+                            background="transparent",
+                            _hover={"color": "#c0c0c0", "border": "1px solid #c0c0c0", "background": "transparent"},
+                            transition="color 0.2s, border-color 0.2s",
+                        ),
+                        href="/register",
+                    ),
+                    spacing="6",
                     align="center",
                 ),
             ),
