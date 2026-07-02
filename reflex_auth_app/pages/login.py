@@ -72,6 +72,7 @@ def login_page() -> rx.Component:
                             type="submit",
                             width="100%",
                             size="3",
+                            loading=AuthState.is_loading,
                         ),
                         spacing="3",
                         width="100%",

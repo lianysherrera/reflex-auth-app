@@ -24,6 +24,7 @@ class AuthState(rx.State):
     session_token: str = rx.Cookie("", name=SESSION_COOKIE_NAME)
     show_password: bool = False
     show_confirm_password: bool = False
+    is_loading: bool = False
 
     @rx.var
     def is_logged_in(self) -> bool:
@@ -72,6 +73,8 @@ class AuthState(rx.State):
     async def handle_register(self, form_data: dict):
         self.register_error = ""
         self.register_success = ""
+        self.is_loading = True
+        yield
 
         name = form_data.get("name", "").strip()
         email = form_data.get("email", "").strip().lower()
@@ -80,20 +83,24 @@ class AuthState(rx.State):
 
         if not name or not email or not password or not confirm_password:
             self.register_error = "Por favor completa todos los campos."
+            self.is_loading = False
             return
 
         if not EMAIL_REGEX.match(email):
             self.register_error = "El formato del email no es válido."
+            self.is_loading = False
             return
 
         if len(password) < MIN_PASSWORD_LENGTH:
             self.register_error = (
                 f"La contraseña debe tener al menos {MIN_PASSWORD_LENGTH} caracteres."
             )
+            self.is_loading = False
             return
 
         if password != confirm_password:
             self.register_error = "Las contraseñas no coinciden."
+            self.is_loading = False
             return
 
         with rx.session() as session:
@@ -103,6 +110,7 @@ class AuthState(rx.State):
 
             if existing_user is not None:
                 self.register_error = "Ya existe una cuenta registrada con ese email."
+                self.is_loading = False
                 return
 
             verification_token = uuid.uuid4().hex
@@ -118,6 +126,7 @@ class AuthState(rx.State):
 
         send_verification_email(email, verification_token, name)
 
+        self.is_loading = False
         self.register_success = "¡Cuenta creada! Revisa tu email para verificar tu cuenta antes de iniciar sesión."
         yield
         await asyncio.sleep(3)
@@ -153,14 +162,17 @@ class AuthState(rx.State):
         self.verify_message = "¡Tu cuenta fue verificada exitosamente! Ya puedes iniciar sesión."
         self.verify_success = True
 
-    def handle_login(self, form_data: dict):
+    async def handle_login(self, form_data: dict):
         self.login_error = ""
+        self.is_loading = True
+        yield
 
         email = form_data.get("email", "").strip().lower()
         password = form_data.get("password", "")
 
         if not email or not password:
             self.login_error = "Por favor completa todos los campos."
+            self.is_loading = False
             return
 
         with rx.session() as session:
@@ -170,10 +182,12 @@ class AuthState(rx.State):
 
             if user is None or not verify_password(password, user.password_hash):
                 self.login_error = "Email o contraseña incorrectos."
+                self.is_loading = False
                 return
 
             if not user.is_verified:
                 self.login_error = "Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja de entrada."
+                self.is_loading = False
                 return
 
             new_session = Session(user_id=user.id)
@@ -183,7 +197,8 @@ class AuthState(rx.State):
 
             self.session_token = new_session.token
 
-        return rx.redirect("/dashboard")
+        self.is_loading = False
+        yield rx.redirect("/dashboard")
 
     def handle_logout(self):
         if self.session_token:
