@@ -35,11 +35,25 @@ def login_page() -> rx.Component:
                         ),
                         rx.vstack(
                             rx.text("Contraseña", size="2", weight="medium"),
-                            rx.input(
-                                name="password",
-                                type="password",
-                                placeholder="Tu contraseña",
+                            rx.hstack(
+                                rx.input(
+                                    name="password",
+                                    type=rx.cond(AuthState.show_password, "text", "password"),
+                                    placeholder="Tu contraseña",
+                                    width="100%",
+                                ),
+                                rx.icon_button(
+                                    rx.cond(
+                                        AuthState.show_password,
+                                        rx.icon("eye-off", size=18),
+                                        rx.icon("eye", size=18),
+                                    ),
+                                    on_click=AuthState.toggle_show_password,
+                                    variant="ghost",
+                                    size="2",
+                                ),
                                 width="100%",
+                                align="center",
                             ),
                             spacing="1",
                             width="100%",

@@ -22,6 +22,8 @@ class AuthState(rx.State):
     register_success: str = ""
     login_error: str = ""
     session_token: str = rx.Cookie("", name=SESSION_COOKIE_NAME)
+    show_password: bool = False
+    show_confirm_password: bool = False
 
     @rx.var
     def is_logged_in(self) -> bool:
@@ -33,6 +35,14 @@ class AuthState(rx.State):
         if user is None:
             return ""
         return user.name
+
+    def toggle_show_password(self):
+        # Alterna entre mostrar y ocultar el campo de contraseña
+        self.show_password = not self.show_password
+
+    def toggle_show_confirm_password(self):
+        # Alterna entre mostrar y ocultar e campo de confirmar contraseña
+        self.show_confirm_password = not self.show_confirm_password
 
 
     def require_login(self):
