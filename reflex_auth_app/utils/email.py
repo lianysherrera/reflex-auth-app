@@ -14,8 +14,9 @@ MAILTRAP_PASSWORD = os.getenv("MAILTRAP_PASSWORD", "")
 
 FROM_EMAIL = "no-reply@reflex-auth-app.test"
 
-def send_verification_email(to_email: str, verification_token: str) -> None:
+def send_verification_email(to_email: str, verification_token: str, name: str = "") -> None:
     verification_link = f"http://localhost:3000/verify?token={verification_token}"
+    greeting = f"¡Hola, {name}!" if name else "¡Hola!"
 
     message = MIMEMultipart("alternative")
     message["Subject"] = "Verifica tu cuenta - Reflex Auth App"
@@ -23,13 +24,13 @@ def send_verification_email(to_email: str, verification_token: str) -> None:
     message["To"] = to_email
 
     text_body = (
-        f"¡Hola!\n\n"
+        f"{greeting}\n\n"
         f"Gracias por registrarte. Verifica tu cuenta haciendo clic en este link:\n"
         f"{verification_link}\n\n"
         f"Si no creaste esta cuenta, puedes ignorar este mensaje."
     )
     html_body = (
-        f"<p>¡Hola!</p>"
+        f"<p>{greeting}</p>"
         f"<p>Gracias por registrarte. Verifica tu cuenta haciendo clic en el siguiente botón:</p>"
         f'<p><a href="{verification_link}">Verificar mi cuenta</a></p>'
         f"<p>Si no creaste esta cuenta, puedes ignorar este mensaje.</p>"

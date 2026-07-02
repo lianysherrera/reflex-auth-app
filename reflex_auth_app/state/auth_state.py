@@ -116,7 +116,7 @@ class AuthState(rx.State):
             session.add(new_user)
             session.commit()
 
-        send_verification_email(email, verification_token)
+        send_verification_email(email, verification_token, name)
 
         self.register_success = "¡Cuenta creada! Revisa tu email para verificar tu cuenta antes de iniciar sesión."
         yield
