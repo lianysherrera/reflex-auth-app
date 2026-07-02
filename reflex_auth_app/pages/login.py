@@ -29,6 +29,7 @@ def login_page() -> rx.Component:
                                 type="email",
                                 placeholder="tu@email.com",
                                 width="100%",
+                                disabled=AuthState.is_loading,
                             ),
                             spacing="1",
                             width="100%",
@@ -41,6 +42,7 @@ def login_page() -> rx.Component:
                                     type=rx.cond(AuthState.show_password, "text", "password"),
                                     placeholder="Tu contraseña",
                                     width="100%",
+                                    disabled=AuthState.is_loading,
                                 ),
                                 rx.icon_button(
                                     rx.cond(
@@ -51,6 +53,7 @@ def login_page() -> rx.Component:
                                     on_click=AuthState.toggle_show_password,
                                     variant="ghost",
                                     size="2",
+                                    disabled=AuthState.is_loading,
                                 ),
                                 width="100%",
                                 align="center",
