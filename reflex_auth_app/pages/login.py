@@ -90,6 +90,7 @@ def login_page() -> rx.Component:
                         width="100%",
                     ),
                     on_submit=AuthState.handle_login,
+                    reset_on_submit=True,
                     width="100%",
                 ),
                 rx.text(
