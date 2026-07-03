@@ -47,24 +47,54 @@ def register_page() -> rx.Component:
                         ),
                         rx.vstack(
                             rx.text("Contraseña", size="2", weight="medium"),
-                            rx.input(
-                                name="password",
-                                type="password",
-                                placeholder="Mínimo 8 caracteres",
+                            rx.hstack(
+                                rx.input(
+                                    name="password",
+                                    type=rx.cond(AuthState.show_password, "text", "password"),
+                                    placeholder="Mínimo 8 caracteres",
+                                    width="100%",
+                                    disabled=AuthState.is_loading,
+                                ),
+                                rx.icon_button(
+                                    rx.cond(
+                                        AuthState.show_password,
+                                        rx.icon("eye-off", size=18),
+                                        rx.icon("eye", size=18),
+                                    ),
+                                    on_click=AuthState.toggle_show_password,
+                                    variant="ghost",
+                                    size="2",
+                                    disabled=AuthState.is_loading,
+                                ),
                                 width="100%",
-                                disabled=AuthState.is_loading,
+                                align="center",
                             ),
                             spacing="1",
                             width="100%",
                         ),
                         rx.vstack(
                             rx.text("Confirmar contraseña", size="2", weight="medium"),
-                            rx.input(
-                                name="confirm_password",
-                                type="password",
-                                placeholder="Repite tu contraseña",
+                            rx.hstack(
+                                rx.input(
+                                    name="confirm_password",
+                                    type=rx.cond(AuthState.show_confirm_password, "text", "password"),
+                                    placeholder="Repite tu contraseña",
+                                    width="100%",
+                                    disabled=AuthState.is_loading,
+                                ),
+                                rx.icon_button(
+                                    rx.cond(
+                                        AuthState.show_confirm_password,
+                                        rx.icon("eye-off", size=18),
+                                        rx.icon("eye", size=18),
+                                    ),
+                                    on_click=AuthState.toggle_show_confirm_password,
+                                    variant="ghost",
+                                    size="2",
+                                    disabled=AuthState.is_loading,
+                                ),
                                 width="100%",
-                                disabled=AuthState.is_loading,
+                                align="center",
                             ),
                             spacing="1",
                             width="100%",
@@ -99,6 +129,7 @@ def register_page() -> rx.Component:
                             background="transparent",
                             _hover={"color": "#c0c0c0", "border": "1px solid #c0c0c0", "background": "transparent"},
                             transition="color 0.2s, border-color 0.2s",
+                            margin_top="0.75em",
                         ),
                         spacing="3",
                         width="100%",
