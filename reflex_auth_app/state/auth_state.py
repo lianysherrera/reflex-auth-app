@@ -83,57 +83,55 @@ class AuthState(rx.State):
         self.is_loading = True
         yield
 
-        name = form_data.get("name", "").strip()
-        email = form_data.get("email", "").strip().lower()
-        password = form_data.get("password", "")
-        confirm_password = form_data.get("confirm_password", "")
+        error = None
+        email_data = None
 
-        if not name or not email or not password or not confirm_password:
-            self.register_error = "Por favor completa todos los campos."
+        try:
+            name = form_data.get("name", "").strip()
+            email = form_data.get("email", "").strip().lower()
+            password = form_data.get("password", "")
+            confirm_password = form_data.get("confirm_password", "")
+
+            if not name or not email or not password or not confirm_password:
+                error = "Por favor completa todos los campos."
+            elif not EMAIL_REGEX.match(email):
+                error = "El formato del email no es válido."
+            elif len(password) < MIN_PASSWORD_LENGTH:
+                error = f"La contraseña debe tener al menos {MIN_PASSWORD_LENGTH} caracteres."
+            elif password != confirm_password:
+                error = "Las contraseñas no coinciden."
+            else:
+                with rx.session() as session:
+                    existing_user = session.exec(
+                        sqlmodel.select(User).where(User.email == email)
+                    ).first()
+
+                    if existing_user is not None:
+                        error = "Ya existe una cuenta registrada con ese email."
+                    else:
+                        verification_token = uuid.uuid4().hex
+                        new_user = User(
+                            name=name,
+                            email=email,
+                            password_hash=hash_password(password),
+                            verification_token=verification_token,
+                        )
+                        session.add(new_user)
+                        session.commit()
+                        email_data = (email, verification_token, name)
+        except Exception:
+            error = "Error inesperado. Inténtalo de nuevo."
+        finally:
             self.is_loading = False
+
+        if error:
+            self.register_error = error
+            yield
+            await asyncio.sleep(6)
+            self.register_error = ""
             return
 
-        if not EMAIL_REGEX.match(email):
-            self.register_error = "El formato del email no es válido."
-            self.is_loading = False
-            return
-
-        if len(password) < MIN_PASSWORD_LENGTH:
-            self.register_error = (
-                f"La contraseña debe tener al menos {MIN_PASSWORD_LENGTH} caracteres."
-            )
-            self.is_loading = False
-            return
-
-        if password != confirm_password:
-            self.register_error = "Las contraseñas no coinciden."
-            self.is_loading = False
-            return
-
-        with rx.session() as session:
-            existing_user = session.exec(
-                sqlmodel.select(User).where(User.email == email)
-            ).first()
-
-            if existing_user is not None:
-                self.register_error = "Ya existe una cuenta registrada con ese email."
-                self.is_loading = False
-                return
-
-            verification_token = uuid.uuid4().hex
-
-            new_user = User(
-                name=name,
-                email=email,
-                password_hash=hash_password(password),
-                verification_token=verification_token,
-            )
-            session.add(new_user)
-            session.commit()
-
-        send_verification_email(email, verification_token, name)
-
-        self.is_loading = False
+        send_verification_email(*email_data)
         self.register_success = "¡Cuenta creada! Revisa tu email para verificar tu cuenta antes de iniciar sesión."
         yield
         await asyncio.sleep(3)
@@ -174,40 +172,46 @@ class AuthState(rx.State):
         self.is_loading = True
         yield
 
-        email = form_data.get("email", "").strip().lower()
-        password = form_data.get("password", "")
-
         error = None
+        redirect = False
 
-        if not email or not password:
-            error = "Por favor completa todos los campos."
-        else:
-            with rx.session() as session:
-                user = session.exec(
-                    sqlmodel.select(User).where(User.email == email)
-                ).first()
+        try:
+            email = form_data.get("email", "").strip().lower()
+            password = form_data.get("password", "")
 
-                if user is None or not verify_password(password, user.password_hash):
-                    error = "Email o contraseña incorrectos."
-                elif not user.is_verified:
-                    error = "Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja de entrada."
-                else:
-                    new_session = Session(user_id=user.id)
-                    session.add(new_session)
-                    session.commit()
-                    session.refresh(new_session)
-                    self.session_token = new_session.token
+            if not email or not password:
+                error = "Por favor completa todos los campos."
+            else:
+                with rx.session() as session:
+                    user = session.exec(
+                        sqlmodel.select(User).where(User.email == email)
+                    ).first()
+
+                    if user is None or not verify_password(password, user.password_hash):
+                        error = "Email o contraseña incorrectos."
+                    elif not user.is_verified:
+                        error = "Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja de entrada."
+                    else:
+                        new_session = Session(user_id=user.id)
+                        session.add(new_session)
+                        session.commit()
+                        session.refresh(new_session)
+                        self.session_token = new_session.token
+                        redirect = True
+        except Exception:
+            error = "Error inesperado. Inténtalo de nuevo."
+        finally:
+            self.is_loading = False
 
         if error:
             self.login_error = error
-            self.is_loading = False
             yield
             await asyncio.sleep(6)
             self.login_error = ""
             return
 
-        self.is_loading = False
-        yield rx.redirect("/dashboard")
+        if redirect:
+            yield rx.redirect("/dashboard")
 
     def handle_logout(self):
         if self.session_token:
