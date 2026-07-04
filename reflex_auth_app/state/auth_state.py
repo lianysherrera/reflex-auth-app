@@ -5,8 +5,6 @@ from typing import Optional
 import reflex as rx
 import sqlmodel
 
-import uuid
-from reflex_auth_app.utils.email import send_verification_email
 
 from reflex_auth_app.models import Session, User
 from reflex_auth_app.utils import hash_password, verify_password
@@ -84,7 +82,6 @@ class AuthState(rx.State):
         yield
 
         error = None
-        email_data = None
 
         try:
             name = form_data.get("name", "").strip()
@@ -109,16 +106,14 @@ class AuthState(rx.State):
                     if existing_user is not None:
                         error = "Ya existe una cuenta registrada con ese email."
                     else:
-                        verification_token = uuid.uuid4().hex
                         new_user = User(
                             name=name,
                             email=email,
                             password_hash=hash_password(password),
-                            verification_token=verification_token,
+                            is_verified=True,
                         )
                         session.add(new_user)
                         session.commit()
-                        email_data = (email, verification_token, name)
         except Exception:
             error = "Error inesperado. Inténtalo de nuevo."
         finally:
@@ -131,8 +126,7 @@ class AuthState(rx.State):
             self.register_error = ""
             return
 
-        send_verification_email(*email_data)
-        self.register_success = "¡Cuenta creada! Revisa tu email para verificar tu cuenta antes de iniciar sesión."
+        self.register_success = "¡Cuenta creada! Ya puedes iniciar sesión."
         yield
         await asyncio.sleep(3)
         self.register_success = ""
@@ -190,7 +184,8 @@ class AuthState(rx.State):
                     if user is None or not verify_password(password, user.password_hash):
                         error = "Email o contraseña incorrectos."
                     elif not user.is_verified:
-                        error = "Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja de entrada."
+                        error = "Debes verificar tu email antes de iniciar sesión."
+                        self.unverified_email = email
                     else:
                         new_session = Session(user_id=user.id)
                         session.add(new_session)
