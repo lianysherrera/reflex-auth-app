@@ -93,11 +93,18 @@ def login_page() -> rx.Component:
                     reset_on_submit=True,
                     width="100%",
                 ),
-                rx.text(
-                    "¿No tienes cuenta? ",
-                    rx.link("Regístrate", href="/register"),
-                    size="2",
-                    color="gray",
+                rx.hstack(
+                    rx.text("¿No tienes cuenta?", size="2", color="gray"),
+                    rx.link(
+                        "Regístrate",
+                        href="/register",
+                        size="2",
+                        color="white",
+                        _hover={"color": "#c0c0c0"},
+                        transition="color 0.2s",
+                    ),
+                    spacing="1",
+                    justify="center",
                     margin_top="1em",
                 ),
                 spacing="4",
