@@ -1,5 +1,6 @@
 import asyncio
 import re
+import uuid
 from typing import Optional
 
 import reflex as rx
@@ -8,6 +9,7 @@ import sqlmodel
 
 from reflex_auth_app.models import Session, User
 from reflex_auth_app.utils import hash_password, verify_password, generate_avatar_color
+from reflex_auth_app.utils.email import send_verification_email
 
 EMAIL_REGEX = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 MIN_PASSWORD_LENGTH = 8
@@ -23,6 +25,8 @@ class AuthState(rx.State):
     show_password: bool = False
     show_confirm_password: bool = False
     is_loading: bool = False
+    verify_message: str = ""
+    verify_success: bool = False
 
     @rx.var
     def is_logged_in(self) -> bool:
@@ -82,6 +86,7 @@ class AuthState(rx.State):
         yield
 
         error = None
+        email_data = None
 
         try:
             name = form_data.get("name", "").strip()
@@ -106,14 +111,17 @@ class AuthState(rx.State):
                     if existing_user is not None:
                         error = "Ya existe una cuenta registrada con ese email."
                     else:
+                        verification_token = uuid.uuid4().hex
                         new_user = User(
                             name=name,
                             email=email,
                             password_hash=hash_password(password),
                             avatar_color=generate_avatar_color(),
+                            verification_token=verification_token,
                         )
                         session.add(new_user)
                         session.commit()
+                        email_data = (email, verification_token, name)
         except Exception:
             error = "Error inesperado. Inténtalo de nuevo."
         finally:
@@ -126,10 +134,37 @@ class AuthState(rx.State):
             self.register_error = ""
             return
 
-        self.register_success = "¡Cuenta creada! Ya puedes iniciar sesión."
+        send_verification_email(*email_data)
+        self.register_success = "¡Cuenta creada! Revisa tu email para verificar tu cuenta antes de iniciar sesión."
         yield
         await asyncio.sleep(3)
         self.register_success = ""
+
+    def handle_verify(self):
+        token = self.router.page.params.get("token", "")
+
+        if not token:
+            self.verify_message = "Link de verificación inválido."
+            self.verify_success = False
+            return
+
+        with rx.session() as session:
+            user = session.exec(
+                sqlmodel.select(User).where(User.verification_token == token)
+            ).first()
+
+            if user is None:
+                self.verify_message = "Este link de verificación no es válido o ya fue usado."
+                self.verify_success = False
+                return
+
+            user.is_verified = True
+            user.verification_token = None
+            session.add(user)
+            session.commit()
+
+        self.verify_message = "¡Tu cuenta fue verificada exitosamente! Ya puedes iniciar sesión."
+        self.verify_success = True
 
     async def handle_login(self, form_data: dict):
         self.login_error = ""
@@ -153,6 +188,8 @@ class AuthState(rx.State):
 
                     if user is None or not verify_password(password, user.password_hash):
                         error = "Email o contraseña incorrectos."
+                    elif not user.is_verified:
+                        error = "Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja de entrada."
                     else:
                         new_session = Session(user_id=user.id)
                         session.add(new_session)

@@ -1,2 +1,3 @@
 reflex[db]==0.9.6.post1
 bcrypt==5.0.0
+python-dotenv==1.0.1

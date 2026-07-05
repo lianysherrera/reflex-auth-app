@@ -10,3 +10,5 @@ class User(sqlmodel.SQLModel, table=True):
     password_hash: str = sqlmodel.Field(nullable=False)
     bio: Optional[str] = sqlmodel.Field(default=None, nullable=True)
     avatar_color: str = sqlmodel.Field(default="#4F46E5", nullable=False)
+    is_verified: bool = sqlmodel.Field(default=False, nullable=False)
+    verification_token: Optional[str] = sqlmodel.Field(default=None, nullable=True)
