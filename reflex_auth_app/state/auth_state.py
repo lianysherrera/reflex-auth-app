@@ -110,7 +110,6 @@ class AuthState(rx.State):
                             name=name,
                             email=email,
                             password_hash=hash_password(password),
-                            is_verified=True,
                         )
                         session.add(new_user)
                         session.commit()
@@ -130,36 +129,6 @@ class AuthState(rx.State):
         yield
         await asyncio.sleep(3)
         self.register_success = ""
-
-    # Mensaje a mostrar en la página de verificación.
-    verify_message: str = ""
-    verify_success: bool = False
-
-    def handle_verify(self):
-        token = self.router.page.params.get("token", "")
-
-        if not token:
-            self.verify_message = "Link de verificación inválido."
-            self.verify_success = False
-            return
-
-        with rx.session() as session:
-            user = session.exec(
-                sqlmodel.select(User).where(User.verification_token == token)
-            ).first()
-
-            if user is None:
-                self.verify_message = "Este link de verificación no es válido o ya fue usado."
-                self.verify_success = False
-                return
-
-            user.is_verified = True
-            user.verification_token = None
-            session.add(user)
-            session.commit()
-
-        self.verify_message = "¡Tu cuenta fue verificada exitosamente! Ya puedes iniciar sesión."
-        self.verify_success = True
 
     async def handle_login(self, form_data: dict):
         self.login_error = ""
@@ -183,8 +152,6 @@ class AuthState(rx.State):
 
                     if user is None or not verify_password(password, user.password_hash):
                         error = "Email o contraseña incorrectos."
-                    elif not user.is_verified:
-                        error = "Debes verificar tu email antes de iniciar sesión."
                     else:
                         new_session = Session(user_id=user.id)
                         session.add(new_session)
