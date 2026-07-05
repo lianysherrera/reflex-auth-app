@@ -185,7 +185,6 @@ class AuthState(rx.State):
                         error = "Email o contraseña incorrectos."
                     elif not user.is_verified:
                         error = "Debes verificar tu email antes de iniciar sesión."
-                        self.unverified_email = email
                     else:
                         new_session = Session(user_id=user.id)
                         session.add(new_session)
