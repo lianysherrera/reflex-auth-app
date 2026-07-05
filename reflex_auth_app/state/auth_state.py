@@ -7,7 +7,7 @@ import sqlmodel
 
 
 from reflex_auth_app.models import Session, User
-from reflex_auth_app.utils import hash_password, verify_password
+from reflex_auth_app.utils import hash_password, verify_password, generate_avatar_color
 
 EMAIL_REGEX = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 MIN_PASSWORD_LENGTH = 8
@@ -110,6 +110,7 @@ class AuthState(rx.State):
                             name=name,
                             email=email,
                             password_hash=hash_password(password),
+                            avatar_color=generate_avatar_color(),
                         )
                         session.add(new_user)
                         session.commit()
