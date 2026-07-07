@@ -30,18 +30,18 @@ class AuthState(rx.State):
     profile_error: str = ""
     profile_success: str = ""
 
-    @rx.var
+    @rx.var(cache=False)
     def is_logged_in(self) -> bool:
         return self._get_current_user() is not None
 
-    @rx.var
+    @rx.var(cache=False)
     def current_user_name(self) -> str:
         user = self._get_current_user()
         if user is None:
             return ""
         return user.name
 
-    @rx.var
+    @rx.var(cache=False)
     def user_initials(self) -> str:
         user = self._get_current_user()
         if user is None:
@@ -51,19 +51,19 @@ class AuthState(rx.State):
             return parts[0][0].upper()
         return (parts[0][0] + parts[-1][0]).upper()
 
-    @rx.var
+    @rx.var(cache=False)
     def avatar_color(self) -> str:
         user = self._get_current_user()
         return user.avatar_color if user is not None else "#4F46E5"
 
-    @rx.var
+    @rx.var(cache=False)
     def current_user_email(self) -> str:
         user = self._get_current_user()
         if user is None:
             return ""
         return user.email
 
-    @rx.var
+    @rx.var(cache=False)
     def current_user_bio(self) -> str:
         user = self._get_current_user()
         if user is None or user.bio is None:
@@ -258,11 +258,12 @@ class AuthState(rx.State):
         self.session_token = ""
         return rx.redirect("/login")
     
-    def handle_update_name(self, form_data: dict) -> None:
+    def handle_update_profile(self, form_data: dict) -> None:
         self.profile_error = ""
         self.profile_success = ""
 
         new_name = form_data.get("name", "").strip()
+        new_bio = form_data.get("bio", "").strip()
 
         if not new_name:
             self.profile_error = "El nombre no puede estar vacío."
@@ -287,33 +288,8 @@ class AuthState(rx.State):
                 return
 
             user.name = new_name
-            session.add(user)
-            session.commit()
-
-        self.profile_success = "¡Nombre actualizado correctamente!"
-
-    def handle_update_bio(self, form_data: dict) -> None:
-        self.profile_error = ""
-        self.profile_success = ""
-
-        new_bio = form_data.get("bio", "").strip()
-
-        current_user = self._get_current_user()
-        if current_user is None:
-            self.profile_error = "No se encontró el usuario."
-            return
-
-        with rx.session() as session:
-            user = session.exec(
-                sqlmodel.select(User).where(User.id == current_user.id)
-            ).first()
-
-            if user is None:
-                self.profile_error = "No se encontró el usuario."
-                return
-
             user.bio = new_bio if new_bio else None
             session.add(user)
             session.commit()
 
-        self.profile_success = "¡Bio actualizada correctamente!"
+        self.profile_success = "¡Perfil actualizado correctamente!"
