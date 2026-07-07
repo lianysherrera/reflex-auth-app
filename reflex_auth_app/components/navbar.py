@@ -1,62 +1,65 @@
 import reflex as rx
 
+from reflex_auth_app.components.avatar import user_avatar
 from reflex_auth_app.state.auth_state import AuthState
 
 
 def navbar() -> rx.Component:
-    return rx.box(
-        rx.hstack(
-            rx.link(
-                rx.heading("Reflex Auth", size="5", color="white", _hover={"color": "#c0c0c0"}, transition="color 0.2s"),
-                href="/",
-            ),
-            rx.spacer(),
-            rx.cond(
-                AuthState.is_logged_in,
-                rx.hstack(
-                    rx.text(f"Hola, {AuthState.current_user_name}"),
-                    rx.button(
-                        "Cerrar sesión",
-                        on_click=AuthState.handle_logout,
-                        variant="soft",
+    return rx.hstack(
+        rx.link(
+            rx.heading("Reflex Auth App", size="5"),
+            href="/",
+        ),
+        rx.spacer(),
+        rx.cond(
+            AuthState.is_logged_in,
+            rx.dropdown_menu.root(
+                rx.dropdown_menu.trigger(
+                    rx.hstack(
+                        user_avatar(),
+                        rx.text(
+                            AuthState.current_user_name,
+                            size="2",
+                            weight="medium",
+                        ),
+                        rx.icon("chevron-down", size=16),
+                        align="center",
+                        spacing="2",
                         cursor="pointer",
                     ),
-                    spacing="4",
-                    align="center",
                 ),
-                rx.hstack(
-                    rx.link(
-                        rx.button(
-                            "Iniciar sesión",
-                            variant="ghost",
-                            color="white",
-                            border="1px solid white",
-                            background="transparent",
-                            _hover={"color": "#c0c0c0", "border": "1px solid #c0c0c0", "background": "transparent"},
-                            transition="color 0.2s, border-color 0.2s",
+                rx.dropdown_menu.content(
+                    rx.dropdown_menu.item(
+                        rx.hstack(
+                            rx.icon("user", size=16),
+                            rx.text("Ver perfil"),
+                            spacing="2",
+                            align="center",
                         ),
-                        href="/login",
+                        on_click=rx.redirect("/profile"),
                     ),
-                    rx.link(
-                        rx.button(
-                            "Registrarse",
-                            variant="ghost",
-                            color="white",
-                            border="1px solid white",
-                            background="transparent",
-                            _hover={"color": "#c0c0c0", "border": "1px solid #c0c0c0", "background": "transparent"},
-                            transition="color 0.2s, border-color 0.2s",
+                    rx.dropdown_menu.separator(),
+                    rx.dropdown_menu.item(
+                        rx.hstack(
+                            rx.icon("log-out", size=16),
+                            rx.text("Cerrar sesión"),
+                            spacing="2",
+                            align="center",
                         ),
-                        href="/register",
+                        on_click=AuthState.handle_logout,
+                        color="red",
                     ),
-                    spacing="6",
-                    align="center",
                 ),
             ),
-            width="100%",
-            align="center",
-            padding="1em",
+            rx.hstack(
+                rx.link("Iniciar sesión", href="/login"),
+                rx.link("Registrarse", href="/register"),
+                spacing="4",
+                align="center",
+            ),
         ),
         width="100%",
+        padding="1em 2em",
+        align="center",
         border_bottom="1px solid var(--gray-5)",
     )

@@ -39,6 +39,21 @@ class AuthState(rx.State):
             return ""
         return user.name
 
+    @rx.var
+    def user_initials(self) -> str:
+        user = self._get_current_user()
+        if user is None:
+            return ""
+        parts = user.name.strip().split()
+        if len(parts) == 1:
+            return parts[0][0].upper()
+        return (parts[0][0] + parts[-1][0]).upper()
+
+    @rx.var
+    def avatar_color(self) -> str:
+        user = self._get_current_user()
+        return user.avatar_color if user is not None else "#4F46E5"
+
     def toggle_show_password(self):
         # Alterna entre mostrar y ocultar el campo de contraseña
         self.show_password = not self.show_password
