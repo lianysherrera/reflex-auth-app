@@ -27,6 +27,8 @@ class AuthState(rx.State):
     is_loading: bool = False
     verify_message: str = ""
     verify_success: bool = False
+    profile_error: str = ""
+    profile_success: str = ""
 
     @rx.var
     def is_logged_in(self) -> bool:
@@ -53,6 +55,20 @@ class AuthState(rx.State):
     def avatar_color(self) -> str:
         user = self._get_current_user()
         return user.avatar_color if user is not None else "#4F46E5"
+
+    @rx.var
+    def current_user_email(self) -> str:
+        user = self._get_current_user()
+        if user is None:
+            return ""
+        return user.email
+
+    @rx.var
+    def current_user_bio(self) -> str:
+        user = self._get_current_user()
+        if user is None or user.bio is None:
+            return ""
+        return user.bio
 
     def toggle_show_password(self):
         # Alterna entre mostrar y ocultar el campo de contraseña
@@ -241,3 +257,63 @@ class AuthState(rx.State):
 
         self.session_token = ""
         return rx.redirect("/login")
+    
+    def handle_update_name(self, form_data: dict) -> None:
+        self.profile_error = ""
+        self.profile_success = ""
+
+        new_name = form_data.get("name", "").strip()
+
+        if not new_name:
+            self.profile_error = "El nombre no puede estar vacío."
+            return
+
+        if len(new_name) < 2:
+            self.profile_error = "El nombre debe tener al menos 2 caracteres."
+            return
+
+        current_user = self._get_current_user()
+        if current_user is None:
+            self.profile_error = "No se encontró el usuario."
+            return
+
+        with rx.session() as session:
+            user = session.exec(
+                sqlmodel.select(User).where(User.id == current_user.id)
+            ).first()
+
+            if user is None:
+                self.profile_error = "No se encontró el usuario."
+                return
+
+            user.name = new_name
+            session.add(user)
+            session.commit()
+
+        self.profile_success = "¡Nombre actualizado correctamente!"
+
+    def handle_update_bio(self, form_data: dict) -> None:
+        self.profile_error = ""
+        self.profile_success = ""
+
+        new_bio = form_data.get("bio", "").strip()
+
+        current_user = self._get_current_user()
+        if current_user is None:
+            self.profile_error = "No se encontró el usuario."
+            return
+
+        with rx.session() as session:
+            user = session.exec(
+                sqlmodel.select(User).where(User.id == current_user.id)
+            ).first()
+
+            if user is None:
+                self.profile_error = "No se encontró el usuario."
+                return
+
+            user.bio = new_bio if new_bio else None
+            session.add(user)
+            session.commit()
+
+        self.profile_success = "¡Bio actualizada correctamente!"
