@@ -29,6 +29,11 @@ class AuthState(rx.State):
     verify_success: bool = False
     profile_error: str = ""
     profile_success: str = ""
+    password_error: str = ""
+    password_success: str = ""
+    show_current_password: bool = False
+    show_new_password: bool = False
+    show_confirm_new_password: bool = False
 
     @rx.var(cache=False)
     def is_logged_in(self) -> bool:
@@ -77,6 +82,15 @@ class AuthState(rx.State):
     def toggle_show_confirm_password(self):
         # Alterna entre mostrar y ocultar e campo de confirmar contraseña
         self.show_confirm_password = not self.show_confirm_password
+
+    def toggle_show_current_password(self):
+        self.show_current_password = not self.show_current_password
+
+    def toggle_show_new_password(self):
+        self.show_new_password = not self.show_new_password
+
+    def toggle_show_confirm_new_password(self):
+        self.show_confirm_new_password = not self.show_confirm_new_password
 
 
     def require_login(self):
@@ -293,3 +307,51 @@ class AuthState(rx.State):
             session.commit()
 
         self.profile_success = "¡Perfil actualizado correctamente!"
+
+    def handle_change_password(self, form_data: dict) -> None:
+        self.password_error = ""
+        self.password_success = ""
+
+        current_password = form_data.get("current_password", "")
+        new_password = form_data.get("new_password", "")
+        confirm_new_password = form_data.get("confirm_new_password", "")
+
+        if not current_password or not new_password or not confirm_new_password:
+            self.password_error = "Por favor completa todos los campos."
+            return
+
+        if len(new_password) < MIN_PASSWORD_LENGTH:
+            self.password_error = f"La nueva contraseña debe tener al menos {MIN_PASSWORD_LENGTH} caracteres."
+            return
+
+        if new_password != confirm_new_password:
+            self.password_error = "Las contraseñas nuevas no coinciden."
+            return
+
+        if new_password == current_password:
+            self.password_error = "La nueva contraseña debe ser diferente a la actual."
+            return
+
+        current_user = self._get_current_user()
+        if current_user is None:
+            self.password_error = "No se encontró el usuario."
+            return
+
+        if not verify_password(current_password, current_user.password_hash):
+            self.password_error = "La contraseña actual es incorrecta."
+            return
+
+        with rx.session() as session:
+            user = session.exec(
+                sqlmodel.select(User).where(User.id == current_user.id)
+            ).first()
+
+            if user is None:
+                self.password_error = "No se encontró el usuario."
+                return
+
+            user.password_hash = hash_password(new_password)
+            session.add(user)
+            session.commit()
+
+        self.password_success = "¡Contraseña actualizada correctamente!"
