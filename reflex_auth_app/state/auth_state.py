@@ -1,13 +1,14 @@
 import asyncio
 import re
 import uuid
-from typing import Optional
+from typing import List, Optional
 
 import reflex as rx
 import sqlmodel
 
 
 from reflex_auth_app.models import Session, User
+from reflex_auth_app.models.note import Note
 from reflex_auth_app.utils import hash_password, verify_password, generate_avatar_color
 from reflex_auth_app.utils.email import send_verification_email
 
@@ -34,6 +35,8 @@ class AuthState(rx.State):
     show_current_password: bool = False
     show_new_password: bool = False
     show_confirm_new_password: bool = False
+    notes: List[dict] = []
+    note_error: str = ""
 
     @rx.var(cache=False)
     def is_logged_in(self) -> bool:
@@ -355,3 +358,65 @@ class AuthState(rx.State):
             session.commit()
 
         self.password_success = "¡Contraseña actualizada correctamente!"
+
+    @rx.var(cache=False)
+    def notes_count(self) -> int:
+        return len(self.notes)
+
+    def load_notes(self):
+        user = self._get_current_user()
+        if user is None:
+            return
+        with rx.session() as session:
+            db_notes = session.exec(
+                sqlmodel.select(Note)
+                .where(Note.user_id == user.id)
+                .order_by(Note.created_at.desc())
+            ).all()
+            self.notes = [
+                {
+                    "id": n.id,
+                    "title": n.title,
+                    "content": n.content,
+                    "created_at": n.created_at.strftime("%d/%m/%Y %H:%M"),
+                }
+                for n in db_notes
+            ]
+
+    def create_note(self, form_data: dict):
+        self.note_error = ""
+        title = form_data.get("title", "").strip()
+        content = form_data.get("content", "").strip()
+
+        if not title:
+            self.note_error = "El título no puede estar vacío."
+            return
+
+        user = self._get_current_user()
+        if user is None:
+            return
+
+        with rx.session() as session:
+            note = Note(user_id=user.id, title=title, content=content)
+            session.add(note)
+            session.commit()
+
+        self.load_notes()
+
+    def delete_note(self, note_id: int):
+        user = self._get_current_user()
+        if user is None:
+            return
+
+        with rx.session() as session:
+            note = session.exec(
+                sqlmodel.select(Note).where(
+                    Note.id == note_id,
+                    Note.user_id == user.id,
+                )
+            ).first()
+            if note is not None:
+                session.delete(note)
+                session.commit()
+
+        self.load_notes()

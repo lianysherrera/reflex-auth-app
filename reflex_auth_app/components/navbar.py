@@ -13,6 +13,20 @@ def navbar() -> rx.Component:
         rx.spacer(),
         rx.cond(
             AuthState.is_logged_in,
+            rx.link(
+                rx.hstack(
+                    rx.icon("notebook-pen", size=16),
+                    rx.text("Mis notas", size="2", weight="medium"),
+                    align="center",
+                    spacing="1",
+                ),
+                href="/dashboard",
+                color_scheme="gray",
+            ),
+        ),
+        rx.box(width="1em"),
+        rx.cond(
+            AuthState.is_logged_in,
             rx.dropdown_menu.root(
                 rx.dropdown_menu.trigger(
                     rx.hstack(

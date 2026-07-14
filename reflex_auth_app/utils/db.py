@@ -4,6 +4,7 @@ from sqlalchemy import inspect as sa_inspect
 
 from reflex_auth_app.models.session import Session
 from reflex_auth_app.models.user import User
+from reflex_auth_app.models.note import Note
 
 
 def _placeholder_for_column(column: sqlalchemy.Column, dialect) -> object | None:
