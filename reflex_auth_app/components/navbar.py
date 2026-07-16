@@ -7,7 +7,7 @@ from reflex_auth_app.state.auth_state import AuthState
 def navbar() -> rx.Component:
     return rx.hstack(
         rx.link(
-            rx.heading("Reflex Auth App", size="5"),
+            rx.heading("Reflex Auth App", size="5", color="white"),
             href="/",
         ),
         rx.spacer(),
@@ -66,8 +66,20 @@ def navbar() -> rx.Component:
                 ),
             ),
             rx.hstack(
-                rx.link("Iniciar sesión", href="/login"),
-                rx.link("Registrarse", href="/register"),
+                rx.link(
+                    "Iniciar sesión",
+                    href="/login",
+                    color="white",
+                    underline="none",
+                    _hover={"color": "white", "opacity": "0.7"},
+                ),
+                rx.link(
+                    "Registrarse",
+                    href="/register",
+                    color="white",
+                    underline="none",
+                    _hover={"color": "white", "opacity": "0.7"},
+                ),
                 spacing="4",
                 align="center",
             ),
