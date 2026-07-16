@@ -1,6 +1,7 @@
 import asyncio
 import re
 import uuid
+from datetime import datetime, timezone
 from typing import List, Optional
 
 import reflex as rx
@@ -97,6 +98,16 @@ class AuthState(rx.State):
 
 
     def require_login(self):
+        if self.session_token:
+            with rx.session() as session:
+                db_session = session.exec(
+                    sqlmodel.select(Session).where(Session.token == self.session_token)
+                ).first()
+                if db_session is not None and self._session_is_expired(db_session):
+                    session.delete(db_session)
+                    session.commit()
+                    self.session_token = ""
+
         if not self.is_logged_in:
             return rx.redirect("/login")
 
@@ -120,12 +131,20 @@ class AuthState(rx.State):
                 sqlmodel.select(Session).where(Session.token == self.session_token)
             ).first()
 
-            if db_session is None:
+            if db_session is None or self._session_is_expired(db_session):
                 return None
 
             return session.exec(
                 sqlmodel.select(User).where(User.id == db_session.user_id)
             ).first()
+
+    @staticmethod
+    def _session_is_expired(db_session: Session) -> bool:
+        now = datetime.now(timezone.utc)
+        expires_at = db_session.expires_at
+        if expires_at.tzinfo is None:
+            now = now.replace(tzinfo=None)
+        return expires_at < now
 
     async def handle_register(self, form_data: dict):
         self.register_error = ""

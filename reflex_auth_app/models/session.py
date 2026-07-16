@@ -1,12 +1,18 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import sqlmodel
 
+SESSION_LIFETIME = timedelta(days=7)
+
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def _default_expiry() -> datetime:
+    return _utcnow() + SESSION_LIFETIME
 
 
 class Session(sqlmodel.SQLModel, table=True):
@@ -20,3 +26,4 @@ class Session(sqlmodel.SQLModel, table=True):
     )
     user_id: int = sqlmodel.Field(foreign_key="user.id", nullable=False, index=True)
     created_at: datetime = sqlmodel.Field(default_factory=_utcnow, nullable=False)
+    expires_at: datetime = sqlmodel.Field(default_factory=_default_expiry, nullable=False)
