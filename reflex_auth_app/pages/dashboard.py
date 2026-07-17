@@ -38,6 +38,27 @@ def note_card(note) -> rx.Component:
     )
 
 
+def empty_notes_state() -> rx.Component:
+    return rx.vstack(
+        rx.icon("notebook-pen", size=32, color_scheme="gray"),
+        rx.text(
+            "No tienes notas todavía",
+            size="3",
+            weight="medium",
+        ),
+        rx.text(
+            "Usa el formulario de arriba para crear tu primera nota.",
+            size="2",
+            color_scheme="gray",
+        ),
+        spacing="1",
+        align="center",
+        justify="center",
+        width="100%",
+        padding_y="2em",
+    )
+
+
 def new_note_form() -> rx.Component:
     return rx.card(
         rx.form(
@@ -124,6 +145,7 @@ def dashboard_page() -> rx.Component:
                         spacing="3",
                         width="100%",
                     ),
+                    empty_notes_state(),
                 ),
                 spacing="5",
                 width="100%",
