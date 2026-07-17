@@ -51,6 +51,15 @@ class AuthState(rx.State):
         return user.name
 
     @rx.var(cache=False)
+    def time_greeting(self) -> str:
+        hour = datetime.now().hour
+        if 5 <= hour < 12:
+            return "Buenos días"
+        if 12 <= hour < 19:
+            return "Buenas tardes"
+        return "Buenas noches"
+
+    @rx.var(cache=False)
     def current_user_email(self) -> str:
         user = self._get_current_user()
         if user is None:

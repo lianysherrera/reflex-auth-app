@@ -107,23 +107,27 @@ def dashboard_page() -> rx.Component:
             rx.vstack(
                 rx.hstack(
                     rx.vstack(
+                        rx.text(
+                            AuthState.time_greeting + ", " + AuthState.current_user_name,
+                            size="3",
+                            color_scheme="gray",
+                        ),
                         rx.heading(
                             "Mis notas",
                             size="7",
                             weight="bold",
                         ),
-                        rx.text(
-                            rx.cond(
-                                AuthState.notes_count == 0,
-                                "Aún no tienes notas. ¡Crea una!",
+                        rx.cond(
+                            AuthState.notes_count > 0,
+                            rx.text(
                                 rx.cond(
                                     AuthState.notes_count == 1,
                                     "1 nota guardada",
                                     AuthState.notes_count.to_string() + " notas guardadas",
                                 ),
+                                size="3",
+                                color_scheme="gray",
                             ),
-                            size="3",
-                            color_scheme="gray",
                         ),
                         spacing="1",
                         align="start",
