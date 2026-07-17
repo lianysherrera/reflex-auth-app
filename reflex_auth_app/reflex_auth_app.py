@@ -9,6 +9,7 @@ from reflex_auth_app.state.auth_state import AuthState
 from reflex_auth_app.utils.db import init_db
 from reflex_auth_app.components.navbar import navbar
 from reflex_auth_app.pages.profile import profile_page
+from reflex_auth_app.pages.not_found import not_found_page
 
 PARTICLES_CONFIG = {
     "particles": {
@@ -115,3 +116,4 @@ app.add_page(login_page, route="/login", on_load=[AuthState.redirect_if_logged_i
 app.add_page(dashboard_page, route="/dashboard", on_load=[AuthState.require_login, AuthState.load_notes])
 app.add_page(verify_page, route="/verify", on_load=AuthState.handle_verify)
 app.add_page(profile_page, route="/profile", on_load=AuthState.require_login)
+app.add_page(not_found_page, route="404")
