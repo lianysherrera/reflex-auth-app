@@ -12,7 +12,7 @@ def profile_page() -> rx.Component:
             rx.vstack(
                 # Cabecera del perfil
                 rx.hstack(
-                    user_avatar(size="72px", font_size="24px"),
+                    user_avatar(size="72px"),
                     rx.vstack(
                         rx.hstack(
                             rx.heading(AuthState.current_user_name, size="6"),

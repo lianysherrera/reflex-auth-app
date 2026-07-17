@@ -51,21 +51,6 @@ class AuthState(rx.State):
         return user.name
 
     @rx.var(cache=False)
-    def user_initials(self) -> str:
-        user = self._get_current_user()
-        if user is None:
-            return ""
-        parts = user.name.strip().split()
-        if len(parts) == 1:
-            return parts[0][0].upper()
-        return (parts[0][0] + parts[-1][0]).upper()
-
-    @rx.var(cache=False)
-    def avatar_color(self) -> str:
-        user = self._get_current_user()
-        return user.avatar_color if user is not None else "#4F46E5"
-
-    @rx.var(cache=False)
     def current_user_email(self) -> str:
         user = self._get_current_user()
         if user is None:
