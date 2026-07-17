@@ -1,5 +1,6 @@
 assets/external/
 .web
+reflex.lock/package-lock.json
 *.db
 .states
 *.py[cod]
